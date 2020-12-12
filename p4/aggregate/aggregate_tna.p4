@@ -48,8 +48,8 @@ parser TpsAggParser(
 
     state start {
         tofino_parser.apply(packet, ig_intr_md);
-        meta.bridge_md.setValid();
-        meta.bridge_md.ingress_port = ig_intr_md.ingress_port;
+        //meta.bridge_md.setValid();
+        //meta.bridge_md.ingress_port = ig_intr_md.ingress_port;
         transition parse_ethernet;
     }
 
@@ -168,6 +168,9 @@ control TpsAggIngress(
     }
 
     apply {
+        meta.bridge_md.setValid();
+        meta.bridge_md.ingress_port = ig_intr_md.ingress_port;
+
         /* Value will be set with the udp_int.dst_port in the parser
            which would be incorrect in this case */
         if (hdr.tcp.isValid()) {
@@ -175,18 +178,23 @@ control TpsAggIngress(
         }
 
         // Basic forwarding and drop logic
-        if (data_drop_t.apply().miss) {
+        //if (data_drop_t.apply().miss) { WHEN 9.2.0
+        data_drop_t.apply();
+        if (ig_dprsr_md.drop_ctl != TNA_DROP_CTL) {
             default_port_t.apply();
 
             if (hdr.arp.isValid() && hdr.arp.opcode == ARP_REQUEST
                     && ig_intr_md.ingress_port == dflt_port) {
                 // ARP Request - multicast out to all configured nodes
                 ig_tm_md.mcast_grp_a = (bit<16>)0x1;
-            } else if (data_forward_t.apply().miss) {
-                data_forward(dflt_port);
-                if (hdr.arp.isValid() && hdr.arp.opcode == ARP_REQUEST
-                        && ig_intr_md.ingress_port != dflt_port) {
-                    ig_dprsr_md.digest_type = DIGEST_TYPE_ARP;
+            } else {
+                data_forward_t.apply();
+                if (ig_tm_md.ucast_egress_port == 0) {
+                    data_forward(dflt_port);
+                    if (hdr.arp.isValid() && hdr.arp.opcode == ARP_REQUEST
+                            && ig_intr_md.ingress_port != dflt_port) {
+                        ig_dprsr_md.digest_type = DIGEST_TYPE_ARP;
+                    }
                 }
             }
 

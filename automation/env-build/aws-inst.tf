@@ -15,7 +15,7 @@
 
 locals {
   py3 = [
-    "sudo update-alternatives --install /usr/bin/python python /usr/bin/python${var.python_version} 0",
+    "echo foo",
   ]
   py2 = [
     "sudo apt-get update",
@@ -83,6 +83,7 @@ bf_sde_s3_bucket=${var.bf_sde_s3_bucket}
 remote_scripts_dir=${var.remote_scripts_dir}
 python_version=${var.python_version}
 ubuntu_version=${var.ubuntu_version}
+sudo_user=${var.sudo_user}
 "\
 EOT
   }

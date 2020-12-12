@@ -17,7 +17,7 @@ locals {
 
 # Orchestrator/SDN Controller Instance
 resource "aws_instance" "orchestrator" {
-  ami = local.ami
+  ami = "ami-0f6632805cb767a67"
   instance_type = var.orch_instance_type
   key_name = aws_key_pair.snaps-mini-pk.key_name
 

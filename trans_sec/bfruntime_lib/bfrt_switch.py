@@ -61,7 +61,7 @@ class BFRuntimeSwitch(SwitchConnection, ABC):
         self.__configure_ports(ansible_inventory, controller_user)
         self.add_switch_id()
         self.digest_thread.start()
-        self.__setup_arp_multicast()
+        # self.__setup_arp_multicast()
         self.__setup_default_port()
 
     def stop(self):

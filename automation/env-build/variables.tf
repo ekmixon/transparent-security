@@ -21,7 +21,8 @@ variable "env_type" {default = "mininet"}
 # Dependency version only for tofino environments
 variable "bf_sde_s3_bucket" {default = "null"}
 
-# Optional Variables
+# Optional Overridable Variables
+# note: BF-SDE Version 9.0.0 and probably prior are broken
 variable "bf_sde_version" {default = "9.2.0"}
 variable "bf_sde_profile" {default = "p4_runtime_profile"}
 variable "create_ami" {default = "yes"}
@@ -34,7 +35,7 @@ variable "python_version" {default = "3.6"}
 variable "base_16_ami" {default = "ami-08692d171e3cf02d6"}
 variable "centos7_ami" {default="ami-01ed306a12b7d1c96"}
 # ubuntu 18
-variable "base_18_ami" {default = "ami-06f2f779464715dc5"}
+variable "base_18_ami" {default = "ami-0d332072badcd3ec3"}
 variable "instance_type" {default = "t2.2xlarge"}
 variable "run_tests" {default = "yes"}
 

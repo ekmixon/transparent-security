@@ -12,10 +12,7 @@
 # limitations under the License.
 ---
 # Build BF SDE
-- import_playbook: ../../tofino/bf-sde/bf-sde-build.yml
-
-# install p4runtime-shell for debugging purposes
-- import_playbook: ../../general/p4_runtime_shell.yml
+#- import_playbook: ../../tofino/bf-sde/bf-sde-build.yml
 
 # disables unattended upgrades
 - import_playbook: ../../general/final_env_setup.yml

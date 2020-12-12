@@ -38,7 +38,7 @@ parser TpsCoreParser(
 
     state start {
         tofino_parser.apply(packet, ig_intr_md);
-        meta.ingress_port = ig_intr_md.ingress_port;
+        //meta.ingress_port = ig_intr_md.ingress_port;
         transition parse_ethernet;
     }
 
@@ -140,6 +140,7 @@ control TpsCoreIngress(
     }
 
     apply {
+        meta.ingress_port = ig_intr_md.ingress_port;
         default_port_t.apply();
         if (ig_intr_md.resubmit_flag == 0) {
             if (hdr.arp.isValid() && hdr.arp.opcode == ARP_REQUEST

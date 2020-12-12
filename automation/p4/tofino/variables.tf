@@ -30,11 +30,24 @@ variable "availability_zone" {default = "us-west-2a"}
 
 variable "tofino" {
   default = {
-    sde_version = "9.2.0"
-    p4rt_ami = "ami-043e6714f3d0863f2"
-    bfrt_ami = "ami-01a5ff54de23b6739"
+    sde_version = "9.0.0"
+    bfrt_ami = "ami-09139904ffb7e0b99"
   }
 }
+//variable "tofino" {
+//  default = {
+//    sde_version = "9.1.1"
+//    bfrt_ami = "ami-0f6632805cb767a67"
+//  }
+//}
+//variable "tofino" {
+//  default = {
+//    sde_version = "9.2.0"
+//    p4rt_ami = "ami-043e6714f3d0863f2"
+//    bfrt_ami = "ami-01a5ff54de23b6739"
+//  }
+//}
+
 variable "hcp_ami" {default ="ami-01bcfe22682eb95e4"}
 
 variable "switch_instance_type" {default = "t2.2xlarge"}
