@@ -57,7 +57,7 @@ class BFRuntimeSwitch(SwitchConnection, ABC):
 
     def start(self, ansible_inventory, controller_user):
         logger.info('Starting switch - [%s]', self.name)
-        self.interface.clear_all_tables()
+        # self.interface.clear_all_tables()
         self.__configure_ports(ansible_inventory, controller_user)
         self.add_switch_id()
         self.digest_thread.start()
