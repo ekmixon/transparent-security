@@ -39,7 +39,7 @@ def get_if(target):
             iface = i
             break
     if not iface:
-        logger.error('Cannot find %s interface' % target)
+        logger.error(f'Cannot find {target} interface')
         exit(1)
     return iface
 
@@ -77,8 +77,7 @@ def get_args():
                         required=False, default='ff:ff:ff:ff:ff:ff')
     parser.add_argument('-t', '--tcp', dest='tcp', action='store_true',
                         required=False)
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
 
 
 def device_send(args):
@@ -100,16 +99,8 @@ def device_send(args):
     pkt = Ether(src=get_if_hwaddr(interface), dst=args.switch_ethernet)
     logger.info('packet Ether obj - %s', pkt)
 
-    if args.source_addr:
-        src_ip = args.source_addr
-    else:
-        src_ip = get_if_addr(interface)
-
-    if args.source_port:
-        src_port = args.source_port
-    else:
-        src_port = random.randint(49152, 65535)
-
+    src_ip = args.source_addr or get_if_addr(interface)
+    src_port = args.source_port or random.randint(49152, 65535)
     if args.tcp:
         pkt = pkt / IP(dst=addr, src=src_ip) / TCP(dport=args.port,
                                                    sport=src_port) / args.msg

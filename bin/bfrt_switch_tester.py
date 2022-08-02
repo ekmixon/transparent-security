@@ -52,7 +52,7 @@ if __name__ == '__main__':
     # Set up Logging
     #
     if args.log_dir and args.log_file:
-        log_file = '{}/{}'.format(args.log_dir, args.log_file)
+        log_file = f'{args.log_dir}/{args.log_file}'
         logging.basicConfig(level=logging.DEBUG, filename=log_file)
     else:
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -61,11 +61,7 @@ if __name__ == '__main__':
 
     topo_file = args.topo
     with open(topo_file, 'r') as f:
-        if topo_file.endswith('json'):
-            topo = json.load(f)
-        else:
-            topo = yaml.safe_load(f)
-
+        topo = json.load(f) if topo_file.endswith('json') else yaml.safe_load(f)
     logger.info('topo - [%s]', topo)
 
     for sw_info in topo['switches'].values():

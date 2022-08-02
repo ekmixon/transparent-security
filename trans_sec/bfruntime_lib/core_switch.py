@@ -111,9 +111,7 @@ class CoreSwitch(BFRuntimeSwitch):
                         self.add_data_forward(src_mac, port)
                         logger.debug('Added digest to data_forward_t')
                     except Exception as e:
-                        if 'ALREADY_EXISTS' in str(e):
-                            pass
-                        else:
+                        if 'ALREADY_EXISTS' not in str(e):
                             logger.error(
                                 'Unexpected error processing digest for '
                                 'data_forward_t - [%s]', e)
@@ -190,9 +188,7 @@ class CoreSwitch(BFRuntimeSwitch):
                                     [DataTuple(add_switch_id_action_val,
                                                val=self.int_device_id)])
         except Exception as e:
-            if 'ALREADY_EXISTS' in str(e):
-                pass
-            else:
+            if 'ALREADY_EXISTS' not in str(e):
                 raise e
 
     def read_ae_ip(self, port=UDP_INT_DST_PORT):
@@ -218,8 +214,7 @@ class CoreSwitch(BFRuntimeSwitch):
             'AE IP - [%s]', self.device_id, ae_ip)
         ip_addr = ipaddress.ip_address(ae_ip)
         logger.debug('ip_addr object - [%s]', ip_addr)
-        action_name = 'TpsCoreEgress.setup_telem_rpt_ipv{}'.format(
-            ip_addr.version)
+        action_name = f'TpsCoreEgress.setup_telem_rpt_ipv{ip_addr.version}'
         try:
             self.insert_table_entry(
                 telem_rpt_tbl,
@@ -230,9 +225,7 @@ class CoreSwitch(BFRuntimeSwitch):
                     DataTuple(telem_rpt_ae_mac, val=ae_mac),
                  ])
         except Exception as e:
-            if 'ALREADY_EXISTS' in str(e):
-                pass
-            else:
+            if 'ALREADY_EXISTS' not in str(e):
                 raise e
 
     def remove_telemetry_rpt(self, ae_ip, port=UDP_INT_DST_PORT):
@@ -246,9 +239,7 @@ class CoreSwitch(BFRuntimeSwitch):
                 telem_rpt_tbl,
                 [KeyTuple(telem_rpt_tbl_key, value=port)])
         except Exception as e:
-            if 'ALREADY_EXISTS' in str(e):
-                pass
-            else:
+            if 'ALREADY_EXISTS' not in str(e):
                 raise e
 
     def set_trpt_sampling_value(self, sample_size):

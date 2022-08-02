@@ -17,13 +17,11 @@ from datetime import datetime
 class PacketTelemetry:
     def __init__(self):
         self.telemetry = {
-            'time_stamp': datetime.today().isoformat(),
-            'global': {
-                'dropped': 0,
-                'forwarded': 0
-            },
-            'by_switch': []
+            'time_stamp': datetime.now().isoformat(),
+            'global': {'dropped': 0, 'forwarded': 0},
+            'by_switch': [],
         }
+
         self.switches = []
         self.hosts = []
 
@@ -53,7 +51,7 @@ class PacketTelemetry:
             self.switches)
 
         first_switch = None
-        if len(list(switch)) > 0:
+        if list(switch):
             # TODO/FIXME - this is pretty terrible logic
             try:
                 first_switch = list(switch)[0]
@@ -72,7 +70,7 @@ class PacketTelemetry:
             self.hosts)
 
         first_device = None
-        if len(list(device)) > 0:
+        if list(device):
             # TODO/FIXME - this is pretty terrible logic
             try:
                 first_device = next(device)
@@ -98,7 +96,7 @@ class PacketTelemetry:
     def reset_total(self):
         self.telemetry['global']['dropped'] = 0
         self.telemetry['global']['forwarded'] = 0
-        self.telemetry['time_stamp'] = datetime.today().isoformat()
+        self.telemetry['time_stamp'] = datetime.now().isoformat()
 
     def register_attack(self, device_id):
         device = self.get_devices([device_id])
@@ -147,7 +145,7 @@ class PacketTelemetry:
                 return switch
 
     def build_msg(self):
-        self.telemetry['time_stamp'] = datetime.today().isoformat()
+        self.telemetry['time_stamp'] = datetime.now().isoformat()
         self.telemetry['by_switch'] = []
         for switch in self.switches:
             switch_msg = dict(switch_id=switch.get('device_name'),

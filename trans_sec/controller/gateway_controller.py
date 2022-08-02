@@ -63,8 +63,8 @@ class GatewayController(AbstractController):
         else:
             return P4RTSwitch(
                 sw_info=sw_info,
-                proto_dump_file='{}/{}-switch-controller.log'.format(
-                    self.log_dir, sw_info['name']))
+                proto_dump_file=f"{self.log_dir}/{sw_info['name']}-switch-controller.log",
+            )
 
     def make_rules(self, sw, north_facing_links, south_facing_links,
                    add_di):
@@ -76,15 +76,29 @@ class GatewayController(AbstractController):
         :param add_di: when True inserts into the data_inspection_t table
         """
         for device_link in south_facing_links:
-            device = self.topo['hosts'].get(device_link['south_node'])
+            if device := self.topo['hosts'].get(device_link['south_node']):
+                logger.info(
+                    (
+                        (
+                            (
+                                (
+                                    (
+                                        f'Gateway: {sw.name}'
+                                        + ' connects to Device: '
+                                    )
+                                    + device['name']
+                                )
+                                + ' on physical port '
+                            )
+                            + str(device_link.get('south_facing_port'))
+                            + ' to IP '
+                        )
+                        + device.get('ip')
+                        + ':'
+                    )
+                    + str(device.get('ip_port'))
+                )
 
-            if device:
-                logger.info('Gateway: ' + sw.name +
-                            ' connects to Device: ' + device['name'] +
-                            ' on physical port ' +
-                            str(device_link.get('south_facing_port')) +
-                            ' to IP ' + device.get('ip') +
-                            ':' + str(device.get('ip_port')))
 
                 if add_di:
                     sw.add_data_inspection(dev_id=device['id'],
@@ -118,7 +132,7 @@ class GatewayController(AbstractController):
                 logger.debug('Attack is IPv4')
                 proto_key = 'ipv4'
 
-            dst_addr_key = 'hdr.{}.dstAddr'.format(proto_key)
+            dst_addr_key = f'hdr.{proto_key}.dstAddr'
             return attack_switch, dst_addr_key
         else:
             return None

@@ -86,13 +86,12 @@ class AppController:
                 # use mininet to set ip and mac to let it know the change
                 host.setIP(link['host_ip'], 24)
                 host.setMAC(link['host_mac'])
-                host.cmd('arp -i %s -s %s %s' % (
-                    iface, link['sw_ip'], link['sw_mac']))
-                host.cmd('ethtool --offload %s rx off tx off' % iface)
-                host.cmd('ip route add %s dev %s' % (link['sw_ip'], iface))
+                host.cmd(f"arp -i {iface} -s {link['sw_ip']} {link['sw_mac']}")
+                host.cmd(f'ethtool --offload {iface} rx off tx off')
+                host.cmd(f"ip route add {link['sw_ip']} dev {iface}")
 
                 # TODO - determine why this was outside of the for block?
-                host.setDefaultRoute("via %s" % link['sw_ip'])
+                host.setDefaultRoute(f"via {link['sw_ip']}")
 
         for host in self.net.hosts:
             for sw in self.net.switches:
@@ -100,7 +99,7 @@ class AppController:
                                          exclude=lambda n: n[0] == 'h')
                 if not path:
                     continue
-                if not path[1][0] == 's':
+                if path[1][0] != 's':
                     continue  # next hop is a switch
 
             for h2 in self.net.hosts:
@@ -112,8 +111,7 @@ class AppController:
                     continue
                 h_link = self.topo.host_links[host.name][path[1]]
                 h2_link = self.topo.host_links[h2.name].values()[0]
-                host.cmd('ip route add %s via %s' % (
-                    h2_link['host_ip'], h_link['sw_ip']))
+                host.cmd(f"ip route add {h2_link['host_ip']} via {h_link['sw_ip']}")
 
         logger.info("Configuring entries in p4 tables")
         for sw_name in entries:

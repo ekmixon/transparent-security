@@ -55,12 +55,9 @@ class DdosSdnController:
         self.controller_user = controller_user
         self.running = False
         self.is_delta = is_delta
-        if ae_ip_str:
-            self.ae_ip = ipaddress.ip_address(ae_ip_str)
-        else:
-            self.ae_ip = None
+        self.ae_ip = ipaddress.ip_address(ae_ip_str) if ae_ip_str else None
         self.drop_rpt_freq = drop_rpt_freq
-        self.drop_rpt_count = dict()
+        self.drop_rpt_count = {}
 
     def start(self):
         logger.info('Starting Controllers - [%s]', self.controllers)
@@ -185,9 +182,7 @@ class DdosSdnController:
                             switch.add_data_forward(df_req['dst_mac'],
                                                     df_req['output_port'])
                         except Exception as e:
-                            if 'ALREADY_EXISTS' in str(e):
-                                pass
-                            else:
+                            if 'ALREADY_EXISTS' not in str(e):
                                 raise e
                     return
 
@@ -375,12 +370,10 @@ class DdosSdnController:
             logger.warning('Aggregate controller cannot add attack')
 
     def get_agg_controller(self):
-        agg_controller = self.controllers.get(AGG_CTRL_KEY)
-        return agg_controller
+        return self.controllers.get(AGG_CTRL_KEY)
 
     def get_core_controller(self):
-        core_controller = self.controllers.get(CORE_CTRL_KEY)
-        return core_controller
+        return self.controllers.get(CORE_CTRL_KEY)
 
     def __get_attack_host(self, attack):
         """
@@ -388,8 +381,7 @@ class DdosSdnController:
         :param attack:
         :return:
         """
-        gateway_controller = self.controllers.get(GATEWAY_CTRL_KEY)
-        if gateway_controller:
+        if gateway_controller := self.controllers.get(GATEWAY_CTRL_KEY):
             logger.info('Attack received - %s', attack)
 
             conditions = {'mac': attack['src_mac']}
@@ -405,7 +397,7 @@ class DdosSdnController:
                 'Check the hosts and register the attack with host object '
                 '- [%s]', host)
             logger.debug('host.__class__ - [%s]', host.__class__)
-            if len(host) > 0:
+            if host:
                 logger.debug('host len is - [%s]', len(host))
                 return host[0], gateway_controller
             else:

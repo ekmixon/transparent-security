@@ -33,7 +33,7 @@ FORMAT = '%(levelname)s %(asctime)-15s %(filename)s %(message)s'
 
 # global drop_rpt_count
 drop_rpt_count = 0
-drop_rpt_dict = list()
+drop_rpt_dict = []
 
 
 def get_args():
@@ -159,7 +159,7 @@ def __log_drop_rpt(ip_pkt, count_to_exit):
     if udp_pkt.dport == 556:
         drop_rpt_pkt = DropReport(_pkt=udp_pkt.payload)
         if not drop_rpt_dict:
-            drop_rpt_dict = dict()
+            drop_rpt_dict = {}
         drop_rpt_dict[drop_rpt_pkt.drop_tbl_keys] = drop_rpt_pkt.drop_count
 
         logger.warning('Drop Report dict - [%s]', drop_rpt_dict)
@@ -261,7 +261,7 @@ def __get_ip_udp_int_pkt(ip_pkt):
             logger.debug('IPv6 src - [%s], dst - [%s]',
                          trpt_ip_pkt.src, trpt_ip_pkt.dst)
         else:
-            raise Exception('Invalid eth type - [{}]'.format(trpt_eth.type))
+            raise Exception(f'Invalid eth type - [{trpt_eth.type}]')
 
         return trpt_ip_pkt, UDP(_pkt=trpt_ip_pkt.payload)
     else:

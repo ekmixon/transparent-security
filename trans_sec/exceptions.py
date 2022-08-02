@@ -23,8 +23,9 @@ class Error(Exception):
         self.body = body
 
     def __str__(self):
-        return 'Status: ' + str(
-            self.status) + ' ' + self.message + '\n' + self.body
+        return (
+            ((f'Status: {str(self.status)}' + ' ') + self.message) + '\n'
+        ) + self.body
 
 
 class AuthorizationError(Error):
@@ -57,7 +58,7 @@ class TSError(Exception):
         self.message = message
 
     def __str__(self):
-        return 'Error on ' + self.expression + ':  ' + self.message
+        return f'Error on {self.expression}:  {self.message}'
 
 
 class ActionError(TSError):

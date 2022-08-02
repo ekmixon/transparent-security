@@ -33,7 +33,7 @@ class PacketTelemetryTests(unittest.TestCase):
             'tests.trans_sec.conf', 'test_topology.yaml')
         with open(topo_file, 'r') as f:
             self.topo = yaml.safe_load(f)
-            logger.info("Opened file - %s" % f.name)
+            logger.info(f"Opened file - {f.name}")
 
         self.packet_telemetry = PacketTelemetry()
 

@@ -39,14 +39,13 @@ class ShortestPath:
         if a == b:
             return [a]
         new_visited = visited + [a]
-        paths = list()
+        paths = []
         for neighbor in self.neighbors[a]:
             if neighbor in new_visited:
                 continue
             if exclude(neighbor) and neighbor != b:
                 continue
-            path = self.__rec_path(neighbor, b, new_visited, exclude)
-            if path:
+            if path := self.__rec_path(neighbor, b, new_visited, exclude):
                 paths.append(path)
 
         paths.sort(key=len)

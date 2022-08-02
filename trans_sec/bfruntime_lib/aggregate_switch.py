@@ -212,14 +212,19 @@ class AggregateSwitch(BFRuntimeSwitch):
     def get_drop_pkt_count(self):
         logger.info('Requesting drop packets')
         drop_table_obj = self.get_table(data_drop_tbl)
-        out_tuples = list()
+        out_tuples = []
         if drop_table_obj:
             try:
                 entries = drop_table_obj.entry_get(
                     self.target, [], flags={"from_hw": True})
-                for data, key in entries:
-                    out_tuples.append((self.__map_drop_tbl_keys(key.to_dict()),
-                                       data.to_dict()["$COUNTER_SPEC_PKTS"]))
+                out_tuples.extend(
+                    (
+                        self.__map_drop_tbl_keys(key.to_dict()),
+                        data.to_dict()["$COUNTER_SPEC_PKTS"],
+                    )
+                    for data, key in entries
+                )
+
             except Exception as e:
                 logger.info("Unable to access table entry info - [%s]", e)
 
@@ -228,16 +233,12 @@ class AggregateSwitch(BFRuntimeSwitch):
 
     @staticmethod
     def __map_drop_tbl_keys(match_keys):
-        key_hashing_map = dict()
-        key_hashing_map['mac'] = match_keys[
-            'hdr.ethernet.src_mac']['value']
-        key_hashing_map['port'] = match_keys[
-            'meta.dst_port']['value']
-        key_hashing_map['ip_addr'] = match_keys[
-            'meta.ipv4_addr']['value']
-        key_hashing_map['ipv6_addr'] = match_keys[
-            'meta.ipv6_addr']['value']
-        return key_hashing_map
+        return {
+            'mac': match_keys['hdr.ethernet.src_mac']['value'],
+            'port': match_keys['meta.dst_port']['value'],
+            'ip_addr': match_keys['meta.ipv4_addr']['value'],
+            'ipv6_addr': match_keys['meta.ipv6_addr']['value'],
+        }
 
     def add_switch_id(self):
         logger.info(
@@ -252,9 +253,7 @@ class AggregateSwitch(BFRuntimeSwitch):
                                     [DataTuple(add_switch_id_action_val,
                                                val=self.int_device_id)])
         except Exception as e:
-            if 'ALREADY_EXISTS' in str(e):
-                pass
-            else:
+            if 'ALREADY_EXISTS' not in str(e):
                 logger.error('Unexpected error inserting into table %s - [%s]',
                              add_switch_id_tbl, e)
                 raise e

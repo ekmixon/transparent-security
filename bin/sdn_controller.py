@@ -114,17 +114,12 @@ def main():
 
     topo_file = args.topo
     with open(topo_file, 'r') as f:
-        if topo_file.endswith('json'):
-            topo = json.load(f)
-        else:
-            topo = yaml.safe_load(f)
-
+        topo = json.load(f) if topo_file.endswith('json') else yaml.safe_load(f)
     logger.info(
         'Starting SDN Controller with topology - [%s] and load_p4 flag - [%s]',
         topo, eval(args.load_p4))
-    controllers = dict()
-    if (args.controller_type == 'gateway'
-            or args.controller_type == 'full'):
+    controllers = {}
+    if args.controller_type in ['gateway', 'full']:
         logger.info('Instantiating a GatewayController')
         controllers[GATEWAY_CTRL_KEY] = GatewayController(
             platform=args.platform,
@@ -132,9 +127,7 @@ def main():
             topo=topo,
             log_dir=args.log_dir,
             load_p4=eval(args.load_p4))
-    if (args.controller_type == 'aggregate'
-            or args.controller_type == 'lab_trial'
-            or args.controller_type == 'full'):
+    if args.controller_type in ['aggregate', 'lab_trial', 'full']:
         logger.info('Instantiating a AggregateController')
         controllers[AGG_CTRL_KEY] = AggregateController(
             platform=args.platform,
@@ -142,9 +135,7 @@ def main():
             topo=topo,
             log_dir=args.log_dir,
             load_p4=eval(args.load_p4))
-    if (args.controller_type == 'core'
-            or args.controller_type == 'lab_trial'
-            or args.controller_type == 'full'):
+    if args.controller_type in ['core', 'lab_trial', 'full']:
         logger.info('Instantiating a CoreController')
         controllers[CORE_CTRL_KEY] = CoreController(
             platform=args.platform,
@@ -154,10 +145,7 @@ def main():
             load_p4=eval(args.load_p4))
     drop_rpt_behavior = args.drop_rpt_behavior
     logger.info("Drop report count behavior - [%s]", drop_rpt_behavior)
-    if drop_rpt_behavior == 'delta':
-        is_delta = True
-    else:
-        is_delta = False
+    is_delta = drop_rpt_behavior == 'delta'
     DdosSdnController(
         topo=topo,
         controllers=controllers,

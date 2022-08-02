@@ -46,7 +46,7 @@ def read_yaml_file(config_file_path):
     Reads a yaml file and returns a dict representation of it
     :return: a dict of the yaml file
     """
-    logger.debug('Attempting to load configuration file - ' + config_file_path)
+    logger.debug(f'Attempting to load configuration file - {config_file_path}')
     config_file = None
     try:
         with open(config_file_path, 'r') as config_file:
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     args = get_args()
 
     if args.log_file:
-        log_file = '{}/{}'.format(args.log_dir, args.log_file)
+        log_file = f'{args.log_dir}/{args.log_file}'
         logging.basicConfig(level=logging.DEBUG, filename=log_file)
     else:
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)

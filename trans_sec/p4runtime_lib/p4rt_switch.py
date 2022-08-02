@@ -70,7 +70,6 @@ class P4RuntimeSwitch(SwitchConnection, ABC):
     def stop_digest_listeners(self):
         if 'arch' in self.sw_info and self.sw_info['arch'] == 'tofino':
             logger.info('Tofino currently not supporting digests')
-            pass
         else:
             self.requests_stream.close()
             self.stream_msg_resp.cancel()
@@ -109,8 +108,7 @@ class P4RuntimeSwitch(SwitchConnection, ABC):
         for members in digest_data:
             logger.debug("Digest members: %s", members)
             if members.WhichOneof('data') == 'struct':
-                source_mac = decode_mac(members.struct.members[0].bitstring)
-                if source_mac:
+                if source_mac := decode_mac(members.struct.members[0].bitstring):
                     logger.debug('Digest MAC Address is: %s', source_mac)
                     ingress_port = int(
                         codecs.encode(members.struct.members[1].bitstring,
@@ -128,16 +126,13 @@ class P4RuntimeSwitch(SwitchConnection, ABC):
     def get_table_entry(self, table_name, action_name, match_fields,
                         action_params, ingress_class=True):
         logger.info("Access P4 table [%s]", table_name)
-        if ingress_class:
-            tbl_class = self.p4_ingress
-        else:
-            tbl_class = self.p4_egress
-
+        tbl_class = self.p4_ingress if ingress_class else self.p4_egress
         return self.p4info_helper.build_table_entry(
-            table_name='{}.{}'.format(tbl_class, table_name),
+            table_name=f'{tbl_class}.{table_name}',
             match_fields=match_fields,
-            action_name='{}.{}'.format(tbl_class, action_name),
-            action_params=action_params)
+            action_name=f'{tbl_class}.{action_name}',
+            action_params=action_params,
+        )
 
     def insert_p4_table_entry(self, table_name, action_name, match_fields,
                               action_params, ingress_class=True,
@@ -185,7 +180,7 @@ class P4RuntimeSwitch(SwitchConnection, ABC):
         else:
             action_params = {'port': egress_port}
 
-        table_name = '{}.data_forward_t'.format(self.p4_ingress)
+        table_name = f'{self.p4_ingress}.data_forward_t'
 
         table_keys = self.get_data_forward_macs()
         logger.debug('Table keys to [%s] - [%s] on device [%s]',
@@ -195,21 +190,19 @@ class P4RuntimeSwitch(SwitchConnection, ABC):
             logger.info('Returning table entry for data_forward_t insertion')
             return self.p4info_helper.build_table_entry(
                 table_name=table_name,
-                match_fields={
-                    'hdr.ethernet.dst_mac': dst_mac
-                },
-                action_name='{}.data_forward'.format(self.p4_ingress),
-                action_params=action_params
+                match_fields={'hdr.ethernet.dst_mac': dst_mac},
+                action_name=f'{self.p4_ingress}.data_forward',
+                action_params=action_params,
             )
+
         elif not egress_port:
             logger.info('Returning table entry for data_forward_t deletion')
             return self.p4info_helper.build_table_entry(
                 table_name=table_name,
-                match_fields={
-                    'hdr.ethernet.dst_mac': dst_mac
-                },
-                action_name='{}.data_forward'.format(self.p4_ingress),
+                match_fields={'hdr.ethernet.dst_mac': dst_mac},
+                action_name=f'{self.p4_ingress}.data_forward',
             )
+
         else:
             logger.info(
                 'Data forward entry already inserted with key - [%s] '
@@ -218,8 +211,9 @@ class P4RuntimeSwitch(SwitchConnection, ABC):
             return None
 
     def add_data_forward(self, dst_mac, egress_port):
-        table_entry = self.__get_data_forward_table_entry(dst_mac, egress_port)
-        if table_entry:
+        if table_entry := self.__get_data_forward_table_entry(
+            dst_mac, egress_port
+        ):
             self.write_table_entry(table_entry)
             return True
         else:
@@ -229,8 +223,7 @@ class P4RuntimeSwitch(SwitchConnection, ABC):
             return False
 
     def del_data_forward(self, dst_mac):
-        table_entry = self.__get_data_forward_table_entry(dst_mac, None)
-        if table_entry:
+        if table_entry := self.__get_data_forward_table_entry(dst_mac, None):
             self.delete_table_entry(table_entry)
             return True
         else:
@@ -249,14 +242,14 @@ class P4RuntimeSwitch(SwitchConnection, ABC):
             'switch_id': self.sw_info['id']
         }
         table_entry = self.p4info_helper.build_table_entry(
-            table_name='{}.data_inspection_t'.format(self.p4_ingress),
+            table_name=f'{self.p4_ingress}.data_inspection_t',
             match_fields={
                 'hdr.ethernet.src_mac': dev_mac,
             },
-            action_name='{}.data_inspect_packet'.format(
-                self.p4_ingress),
-            action_params=action_params
+            action_name=f'{self.p4_ingress}.data_inspect_packet',
+            action_params=action_params,
         )
+
         self.write_table_entry(table_entry)
 
         logger.info(
@@ -269,13 +262,13 @@ class P4RuntimeSwitch(SwitchConnection, ABC):
             'Removing data inspection to device [%s] with ID '
             '- [%s] and mac - [%s]', self.device_id, dev_id, dev_mac)
         table_entry = self.p4info_helper.build_table_entry(
-            table_name='{}.data_inspection_t'.format(self.p4_ingress),
+            table_name=f'{self.p4_ingress}.data_inspection_t',
             match_fields={
                 'hdr.ethernet.src_mac': dev_mac,
             },
-            action_name='{}.data_inspect_packet'.format(
-                self.p4_ingress),
+            action_name=f'{self.p4_ingress}.data_inspect_packet',
         )
+
         self.delete_table_entry(table_entry)
 
         logger.info(
@@ -351,7 +344,7 @@ class P4RuntimeSwitch(SwitchConnection, ABC):
         config.p4_device_config = device_config.SerializeToString()
 
         request.action = \
-            p4runtime_pb2.SetForwardingPipelineConfigRequest.VERIFY_AND_COMMIT
+                p4runtime_pb2.SetForwardingPipelineConfigRequest.VERIFY_AND_COMMIT
 
         logger.info('Request for SetForwardingPipelineConfig to device - [%s]',
                     self.name)
@@ -389,7 +382,7 @@ class P4RuntimeSwitch(SwitchConnection, ABC):
         Returns the key MAC values from the data_forward_t table
         :return: set dst_mac values
         """
-        table_name = '{}.data_forward_t'.format(self.p4_ingress)
+        table_name = f'{self.p4_ingress}.data_forward_t'
         match_vals = self.get_match_values(table_name)
 
         out = set()
@@ -407,7 +400,7 @@ class P4RuntimeSwitch(SwitchConnection, ABC):
         Returns a set of macs that is a key to the data_inspection_t table
         :return: set src_mac values
         """
-        table_name = '{}.data_inspection_t'.format(self.p4_ingress)
+        table_name = f'{self.p4_ingress}.data_inspection_t'
         match_vals = self.get_match_values(table_name)
 
         out = set()
@@ -430,7 +423,7 @@ class P4RuntimeSwitch(SwitchConnection, ABC):
         """
         logger.info('Retrieving keys from table [%s] on device [%s]',
                     table_name, self.grpc_addr)
-        out = list()
+        out = []
         table_entries = self.get_table_entries(table_name)
         entities = table_entries.next().entities
         for entity in entities:
@@ -473,11 +466,7 @@ class P4RuntimeSwitch(SwitchConnection, ABC):
         request.device_id = self.device_id
         entity = request.entities.add()
         table_entry = entity.table_entry
-        if table_id is not None:
-            table_entry.table_id = table_id
-        else:
-            table_entry.table_id = 0
-
+        table_entry.table_id = table_id if table_id is not None else 0
         logger.debug('Request for reading table entries to device [%s]',
                      self.grpc_addr)
         return self.client_stub.Read(request)
@@ -528,17 +517,13 @@ class P4RuntimeSwitch(SwitchConnection, ABC):
         request.device_id = self.device_id
         entity = request.entities.add()
         counter_entry = entity.counter_entry
-        if counter_id is not None:
-            counter_entry.counter_id = counter_id
-        else:
-            counter_entry.counter_id = 0
+        counter_entry.counter_id = counter_id if counter_id is not None else 0
         if index is not None:
             counter_entry.index.index = index
 
         logger.debug('Request for reading counters to device [%s] - [%s]',
                      self.grpc_addr, request)
-        for response in self.client_stub.Read(request):
-            yield response
+        yield from self.client_stub.Read(request)
 
     def reset_counters(self, counter_id=None, index=None):
         logger.info('Reset counter with ID - [%s] and index - [%s]',
@@ -547,10 +532,7 @@ class P4RuntimeSwitch(SwitchConnection, ABC):
         update = request.updates.add()
         update.type = p4runtime_pb2.Update.MODIFY
         counter_entry = p4runtime_pb2.CounterEntry()
-        if counter_id is not None:
-            counter_entry.counter_id = counter_id
-        else:
-            counter_entry.counter_id = 0
+        counter_entry.counter_id = counter_id if counter_id is not None else 0
         if index is not None:
             counter_entry.index.index = index
         counter_entry.data.byte_count = 0
@@ -582,8 +564,7 @@ class P4RuntimeSwitch(SwitchConnection, ABC):
 
     def write_multicast_entry(self, hosts):
         mc_group_id = 1
-        mc_entries = self.sw_info.get('multicast_entries')
-        if mc_entries:
+        if mc_entries := self.sw_info.get('multicast_entries'):
             multicast_entry = self.p4info_helper.build_multicast_group_entry(
                 mc_group_id, mc_entries)
             logger.info('Build Multicast Entry on device [%s] with address '
@@ -610,10 +591,12 @@ class P4RuntimeSwitch(SwitchConnection, ABC):
     def write_arp_flood(self):
         logger.info('Adding ARP Flood to device [%s]', self.grpc_addr)
         table_entry = self.p4info_helper.build_table_entry(
-            table_name='{}.arp_flood_t'.format(self.p4_ingress),
+            table_name=f'{self.p4_ingress}.arp_flood_t',
             match_fields={'hdr.ethernet.dst_mac': 'ff:ff:ff:ff:ff:ff'},
-            action_name='{}.arp_flood'.format(self.p4_ingress),
-            action_params={})
+            action_name=f'{self.p4_ingress}.arp_flood',
+            action_params={},
+        )
+
         self.write_table_entry(table_entry)
 
     def __get_write_request(self, high=0, low=1):

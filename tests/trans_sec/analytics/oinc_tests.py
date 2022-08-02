@@ -386,7 +386,7 @@ class SimpleAETests(unittest.TestCase):
         Tests to ensure that one IPv4 UDP attack has been triggered
         :return:
         """
-        for index in range(0, self.ae.packet_count + 1):
+        for index in range(self.ae.packet_count + 1):
             logger.debug('Processing packet #%s', index)
             ret_val = self.ae.process_packet(self.int_pkt_ipv4_udp)
             if index < self.ae.packet_count:
@@ -399,7 +399,7 @@ class SimpleAETests(unittest.TestCase):
         Tests to ensure that one IPv4 UDP attack has been triggered
         :return:
         """
-        for index in range(0, self.ae.packet_count + 1):
+        for index in range(self.ae.packet_count + 1):
             logger.debug('Processing packet #%s', index)
             ret_val = self.ae.process_packet(
                 self.trpt_pkt_ipv4_out_ipv4_in_udp, consts.UDP_TRPT_DST_PORT)
@@ -415,7 +415,7 @@ class SimpleAETests(unittest.TestCase):
         :return:
         """
         ret_val = False
-        for i in range(0, self.ae.packet_count + 1):
+        for i in range(self.ae.packet_count + 1):
             logger.debug('Processing packet #%s', i)
             ret_val = self.ae.process_packet(
                 self.trpt_pkt_ipv4_out_ipv4_in_udp, consts.UDP_TRPT_DST_PORT)
@@ -428,7 +428,7 @@ class SimpleAETests(unittest.TestCase):
         self.assertTrue(ret_val)
 
         drop_ret = False
-        for j in range(0, 4):
+        for j in range(4):
             drop_ret = self.ae.process_drop_rpt(self.int_drop_rpt_ipv4_udp)
             if j < 3:
                 self.assertFalse(drop_ret)
@@ -448,7 +448,7 @@ class SimpleAETests(unittest.TestCase):
         :return:
         """
         ret_val = False
-        for index in range(0, self.ae.packet_count + 1):
+        for index in range(self.ae.packet_count + 1):
             logger.debug('Processing packet #%s', index)
             ret_val = self.ae.process_packet(self.int_pkt_ipv6_udp)
             if index < self.ae.packet_count:
@@ -463,7 +463,7 @@ class SimpleAETests(unittest.TestCase):
         :return:
         """
         ret_val = False
-        for index in range(0, self.ae.packet_count + 1):
+        for index in range(self.ae.packet_count + 1):
             logger.debug('Processing packet #%s', index)
             ret_val = self.ae.process_packet(
                 self.trpt_pkt_ipv4_out_ipv6_in_udp, consts.UDP_TRPT_DST_PORT)
@@ -478,7 +478,7 @@ class SimpleAETests(unittest.TestCase):
         Tests to ensure that one IPv4 TCP attack has been triggered
         :return:
         """
-        for index in range(0, self.ae.packet_count + 1):
+        for index in range(self.ae.packet_count + 1):
             logger.debug('Processing packet #%s', index)
             ret_val = self.ae.process_packet(self.int_pkt_ipv4_tcp)
             if index < self.ae.packet_count:

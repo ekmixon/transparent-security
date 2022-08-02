@@ -46,14 +46,14 @@ class CoreController(AbstractController):
 
     def instantiate_switch(self, sw_info):
         logger.info('Instantiating switch with arch - [%s]', sw_info)
-        if 'arch' in sw_info and sw_info['arch'] == 'tna':
-            logger.info('Instantiating BFRT CoreSwitch')
-            return BFRTSwitch(sw_info=sw_info)
-        else:
+        if 'arch' not in sw_info or sw_info['arch'] != 'tna':
             return P4RTSwitch(
                 sw_info=sw_info,
-                proto_dump_file='{}/{}-switch-controller.log'.format(
-                    self.log_dir, sw_info['name']))
+                proto_dump_file=f"{self.log_dir}/{sw_info['name']}-switch-controller.log",
+            )
+
+        logger.info('Instantiating BFRT CoreSwitch')
+        return BFRTSwitch(sw_info=sw_info)
 
     def __get_core_switch(self):
         return self.switches[0]

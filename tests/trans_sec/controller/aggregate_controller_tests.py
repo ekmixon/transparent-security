@@ -33,7 +33,7 @@ class AggregateControllerTests(unittest.TestCase):
             'tests.trans_sec.conf', 'test_topology.yaml')
         with open(topo_file, 'r') as f:
             self.topo = yaml.load(f)
-            logger.info("Opened file - %s" % f.name)
+            logger.info(f"Opened file - {f.name}")
 
     @mock.patch('trans_sec.p4runtime_lib.helper.P4InfoHelper',
                 return_value=mock.Mock())
