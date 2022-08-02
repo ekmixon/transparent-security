@@ -38,8 +38,7 @@ class ExerciseTopo(Topo):
 
         for sw_name, sw in switches.items():
             dpid = self.__int_to_dpid(sw['id'])
-            self.addSwitch(sw['name'], dpid=dpid,
-                           log_file="%s/%s.log" % (log_dir, sw))
+            self.addSwitch(sw['name'], dpid=dpid, log_file=f"{log_dir}/{sw}.log")
 
         for link in links:
             np = link.get('north_facing_port')
@@ -151,7 +150,7 @@ class ExerciseTopo(Topo):
     def __print_port_mapping(self):
         logger.info("Switch port mapping:")
         for sw in sorted(self.sw_port_mapping.keys()):
-            logger.info("%s: " % sw,)
+            logger.info(f"{sw}: ")
             for port_num, target in self.sw_port_mapping[sw]:
                 logger.info("%d:%s\t" % (port_num, target),)
 
@@ -249,11 +248,7 @@ class ExerciseRunner:
         """
         Returns a P4RuntimeSwitch class for use by Mininet
         """
-        if self.pcap_dir:
-            pcap_dump_dir = self.pcap_dir
-        else:
-            pcap_dump_dir = self.log_dir
-
+        pcap_dump_dir = self.pcap_dir or self.log_dir
         switch_args = {
             'sw_path': 'simple_switch_grpc',
             'json_path': self.switch_json,
@@ -261,14 +256,17 @@ class ExerciseRunner:
             'pcap_dump': pcap_dump_dir,
         }
 
+
+
         class ConfiguredMininetSwitch(MininetSwitch):
             def __init__(self, *opts, **kwargs):
-                kwargs.update(switch_args)
+                kwargs |= switch_args
                 MininetSwitch.__init__(self, *opts, **kwargs)
 
             def describe(self):
                 logger.info("%s -> gRPC port: %s", self.name,
                             self.grpc_port)
+
 
         return ConfiguredMininetSwitch
 
@@ -294,13 +292,13 @@ class ExerciseRunner:
 
             # Ensure each host's interface name is unique, or else
             # mininet cannot shutdown gracefully
-            h.defaultIntf().rename('%s-eth0' % host['name'])
+            h.defaultIntf().rename(f"{host['name']}-eth0")
             # static arp entries and default routes
-            h.cmd('arp -i %s -s %s %s' % (h_iface.name, sw_ip, sw_iface.mac))
-            h.cmd('ethtool --offload %s rx off tx off' % h_iface.name)
-            h.cmd('route add default gw %s %s' % (sw_ip, h_iface.name))
+            h.cmd(f'arp -i {h_iface.name} -s {sw_ip} {sw_iface.mac}')
+            h.cmd(f'ethtool --offload {h_iface.name} rx off tx off')
+            h.cmd(f'route add default gw {sw_ip} {h_iface.name}')
             h.cmd('/usr/sbin/sshd -D&')
-            h.setDefaultRoute("via %s" % sw_ip)
+            h.setDefaultRoute(f"via {sw_ip}")
 
     def do_net_cli(self):
         """ Starts up the mininet CLI and prints some helpful output.
@@ -333,10 +331,12 @@ class ExerciseRunner:
             print('  simple_switch_CLI --thrift-port <switch thrift port>')
             print('')
         print('To view a switch log, run this command from your host OS:')
-        print('  tail -f %s/<switchname>.log' % self.log_dir)
+        print(f'  tail -f {self.log_dir}/<switchname>.log')
         print('')
-        print('To view the switch output pcap, check the pcap files in %s:'
-              % self.pcap_dir)
+        print(
+            f'To view the switch output pcap, check the pcap files in {self.pcap_dir}:'
+        )
+
         print(' for example run:  sudo tcpdump -xxx -r s1-eth1.pcap')
         print('')
 

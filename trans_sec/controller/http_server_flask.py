@@ -63,8 +63,7 @@ class SDNControllerServer:
 
     def stop(self):
         try:
-            requests.post(url='http://{}:{}/shutdown'.format(
-                self.host, self.port))
+            requests.post(url=f'http://{self.host}:{self.port}/shutdown')
         except Exception as e:
             logger.warning('Trouble shutting down HTTP server - [%s]', e)
 

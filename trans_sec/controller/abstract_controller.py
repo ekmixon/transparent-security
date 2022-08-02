@@ -38,7 +38,7 @@ class AbstractController(object):
 
         # TODO - Implement loading P4 on TNA
         self.load_p4 = load_p4
-        self.switches = list()
+        self.switches = []
 
     def start(self, ansible_inventory, controller_user):
         logger.info('Adding helpers to switch of type - [%s]',

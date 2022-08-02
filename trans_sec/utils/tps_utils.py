@@ -26,8 +26,7 @@ def create_attack_hash(**kwargs):
 
     ipv4 = ipaddress.ip_address(ip_addr)
     ipv6 = ipaddress.ip_address(ipv6_addr)
-    hash_str = "{}|{}|{}|{}".format(mac, port, ipv4, ipv6)
+    hash_str = f"{mac}|{port}|{ipv4}|{ipv6}"
 
     hash_hex = hashlib.sha256(hash_str.encode()).hexdigest()
-    hash_int = int(hash_hex[:16], 16)
-    return hash_int
+    return int(hash_hex[:16], 16)

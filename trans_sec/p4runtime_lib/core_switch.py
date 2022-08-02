@@ -57,18 +57,16 @@ class CoreSwitch(P4RuntimeSwitch):
             'Adding data forward to core device [%s] with source_mac '
             '- [%s] and ingress port - [%s]',
             self.device_id, dst_mac, egress_port)
-        inserted = super(self.__class__, self).add_data_forward(
-            dst_mac, egress_port)
-
-        if inserted:
+        if inserted := super(self.__class__, self).add_data_forward(
+            dst_mac, egress_port
+        ):
             table_entry = self.p4info_helper.build_table_entry(
-                table_name='{}.arp_forward_t'.format(self.p4_ingress),
-                match_fields={
-                    'hdr.ethernet.dst_mac': dst_mac
-                },
-                action_name='{}.arp_forward'.format(self.p4_ingress),
-                action_params={'port': egress_port}
+                table_name=f'{self.p4_ingress}.arp_forward_t',
+                match_fields={'hdr.ethernet.dst_mac': dst_mac},
+                action_name=f'{self.p4_ingress}.arp_forward',
+                action_params={'port': egress_port},
             )
+
             self.write_table_entry(table_entry)
 
     def add_data_inspection(self, dev_id, dev_mac):
@@ -79,8 +77,8 @@ class CoreSwitch(P4RuntimeSwitch):
         action_params = {
             'switch_id': self.int_device_id
         }
-        table_name = '{}.data_inspection_t'.format(self.p4_ingress)
-        action_name = '{}.data_inspect_packet'.format(self.p4_ingress)
+        table_name = f'{self.p4_ingress}.data_inspection_t'
+        action_name = f'{self.p4_ingress}.data_inspect_packet'
         logger.info(
             'Insert params into table - [%s] for action [%s] '
             'with params [%s]',
@@ -103,8 +101,8 @@ class CoreSwitch(P4RuntimeSwitch):
         action_params = {
             'switch_id': dev_id
         }
-        table_name = '{}.data_inspection_t'.format(self.p4_ingress)
-        action_name = '{}.data_inspect_packet'.format(self.p4_ingress)
+        table_name = f'{self.p4_ingress}.data_inspection_t'
+        action_name = f'{self.p4_ingress}.data_inspect_packet'
         logger.info(
             'Insert params into table - [%s] for action [%s] '
             'with params [%s]',
@@ -127,8 +125,8 @@ class CoreSwitch(P4RuntimeSwitch):
         logger.info(
             'Starting telemetry report for INT headers with dst_port '
             'value of 555 to AE IP [%s]', ae_ip_addr)
-        table_name = '{}.setup_telemetry_rpt_t'.format(self.p4_egress)
-        action_name = '{}.setup_telem_rpt_ipv4'.format(self.p4_egress)
+        table_name = f'{self.p4_egress}.setup_telemetry_rpt_t'
+        action_name = f'{self.p4_egress}.setup_telem_rpt_ipv4'
         match_fields = {
             'hdr.udp_int.dst_port': UDP_INT_DST_PORT
         }

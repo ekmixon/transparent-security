@@ -49,8 +49,8 @@ class PacketAnalytics(object):
         self.sdn_interface = sdn_interface
         self.packet_count = packet_count
         self.sample_interval = sample_interval
-        self.count_map = dict()
-        self.bytes_map = dict()
+        self.count_map = {}
+        self.bytes_map = {}
         self.sniff_stop = threading.Event()
         self.sdn_attack_context = sdn_attack_context
 
@@ -262,8 +262,7 @@ def extract_drop_rpt(udp_packet):
     logger.debug('UDP packet sport [%s], dport [%s], len [%s]',
                  udp_packet.sport, udp_packet.dport, udp_packet.len)
 
-    drop_rpt = DropReport(_pkt=udp_packet.payload)
-    if drop_rpt:
+    if drop_rpt := DropReport(_pkt=udp_packet.payload):
         return drop_rpt.drop_tbl_keys, drop_rpt.drop_count
 
 
@@ -280,10 +279,9 @@ class Oinc(PacketAnalytics):
     def process_packet(self, packet, udp_dport=UDP_INT_DST_PORT):
         mac, src_ip, dst_ip, dst_port, packet_size = self.__parse_tree(packet)
 
-        if mac:
-            if src_ip and dst_ip and dst_port and packet_size:
-                self.__packet_with_mac(mac, src_ip, dst_ip, dst_port,
-                                       packet_size)
+        if mac and src_ip and dst_ip and dst_port and packet_size:
+            self.__packet_with_mac(mac, src_ip, dst_ip, dst_port,
+                                   packet_size)
         self.__manage_tree()
 
     def process_drop_rpt(self, packet):
@@ -352,7 +350,7 @@ class Oinc(PacketAnalytics):
         count = packet_size.children[0]
         count.value = count.value + 1
         base_time = count.time
-        current_time = datetime.datetime.today()
+        current_time = datetime.datetime.now()
         delta = (current_time - base_time).total_seconds()
         count.pps = count.value / delta
         if (count.value > 3 and count.pps > 100
@@ -385,13 +383,13 @@ class SimpleAE(PacketAnalytics):
         super(self.__class__, self).__init__(
             sdn_interface, packet_count, sample_interval, sdn_attack_context)
         # Holds the last time an attack call was issued to the SDN controller
-        self.attack_map = dict()
-        self.attack_payload = dict()
+        self.attack_map = {}
+        self.attack_payload = {}
 
         # same key as above, value tuple (int, int) first holds the drop count
         # and the second holds the number of drop reports without receiving
         # any associated packets
-        self.drop_rpt_map = dict()
+        self.drop_rpt_map = {}
         self.drop_count = drop_count
         self.byte_count = byte_count
 
@@ -406,21 +404,23 @@ class SimpleAE(PacketAnalytics):
         ip_pkt, protocol, pkt_bytes = parse_ip_pkt(packet)
         if ip_pkt and protocol and protocol == UDP_PROTO:
             udp_packet = UDP(_pkt=ip_pkt.payload)
-            if udp_packet.dport == udp_dport and udp_dport == UDP_INT_DST_PORT:
-                int_data = extract_int_data(packet[Ether])
-                if int_data:
-                    return self.__process(int_data, pkt_bytes)
-                else:
-                    logger.warning('Unable to debug INT data')
-                    return False
-            elif (udp_packet.dport == udp_dport
-                  and udp_dport == UDP_TRPT_DST_PORT):
-                int_data = extract_trpt_data(udp_packet)
-                if int_data:
-                    return self.__process(int_data, pkt_bytes)
-                else:
-                    logger.warning('Unable to debug INT data')
-                    return False
+            if (
+                udp_packet.dport == udp_dport == UDP_INT_DST_PORT
+                and (int_data := extract_int_data(packet[Ether]))
+                or not udp_packet.dport == udp_dport == UDP_INT_DST_PORT
+                and udp_packet.dport == udp_dport == UDP_TRPT_DST_PORT
+                and (int_data := extract_trpt_data(udp_packet))
+            ):
+                return self.__process(int_data, pkt_bytes)
+            elif (
+                udp_packet.dport == udp_dport == UDP_INT_DST_PORT
+                and not (int_data := extract_int_data(packet[Ether]))
+                or not udp_packet.dport == udp_dport == UDP_INT_DST_PORT
+                and udp_packet.dport == udp_dport == UDP_TRPT_DST_PORT
+                and not (int_data := extract_trpt_data(udp_packet))
+            ):
+                logger.warning('Unable to debug INT data')
+                return False
             else:
                 logger.debug(
                     'Cannot process UDP packet dport of - [%s], expected - '
@@ -457,7 +457,7 @@ class SimpleAE(PacketAnalytics):
             self.drop_rpt_map[attack_map_key] = new_tuple
 
         if not self.count_map.get(attack_map_key):
-            self.count_map[attack_map_key] = list()
+            self.count_map[attack_map_key] = []
 
         curr_time = datetime.datetime.now()
         self.count_map.get(attack_map_key).append((curr_time, pkt_bytes))
@@ -529,8 +529,7 @@ class SimpleAE(PacketAnalytics):
                         new_tuple = (tuple_val[0], tuple_val[1] + 1)
                         self.drop_rpt_map[hash_key] = new_tuple
                         if new_tuple[1] >= self.drop_count:
-                            attack_body = self.attack_payload.get(hash_key)
-                            if attack_body:
+                            if attack_body := self.attack_payload.get(hash_key):
                                 logger.info('Stopping attack with [%s]',
                                             attack_body)
                                 self._stop_attack(**attack_body)

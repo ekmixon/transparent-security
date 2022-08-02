@@ -75,7 +75,7 @@ def main():
     logger.info('Starting Oinc with SDN Controller url [%s]', args.sdn_url)
 
     logger.info('Retrieving http session from url - [%s]', args.sdn_url)
-    url = '{}://{}/{}'.format(args.protocol, args.sdn_url, args.operation)
+    url = f'{args.protocol}://{args.sdn_url}/{args.operation}'
     ret_val = requests.post(url=url, params=args.rest_args)
     logger.info('Return value of REST call [%s]', ret_val)
 

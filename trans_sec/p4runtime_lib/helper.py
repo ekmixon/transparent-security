@@ -56,9 +56,8 @@ class P4InfoHelper(object):
             if name:
                 if pre.name == name or pre.alias == name:
                     return o
-            else:
-                if pre.id == entity_id:
-                    return o
+            elif pre.id == entity_id:
+                return o
 
         if name:
             raise AttributeError(
@@ -77,19 +76,12 @@ class P4InfoHelper(object):
         return self.get(entity_type, entity_id=entity_id).preamble.alias
 
     def __getattr__(self, attr):
-        # Synthesize convenience functions for name to id lookups for top-level
-        # entities
-        # e.g. get_tables_id(name_string) or get_actions_id(name_string)
-        m = re.search(r"^get_(\w+)_id$", attr)
-        if m:
-            primitive = m.group(1)
+        if m := re.search(r"^get_(\w+)_id$", attr):
+            primitive = m[1]
             return lambda name: self.get_id(primitive, name)
 
-        # Synthesize convenience functions for id to name lookups
-        # e.g. get_tables_name(id) or get_actions_name(id)
-        m = re.search(r"^get_(\w+)_name$", attr)
-        if m:
-            primitive = m.group(1)
+        if m := re.search(r"^get_(\w+)_name$", attr):
+            primitive = m[1]
             return lambda prim_id: self.get_name(primitive, prim_id)
 
         raise AttributeError(
@@ -100,12 +92,14 @@ class P4InfoHelper(object):
             pre = t.preamble
             if pre.name == table_name:
                 for mf in t.match_fields:
-                    if name is not None:
-                        if mf.name == name:
-                            return mf
-                    elif field_id is not None:
-                        if mf.id == field_id:
-                            return mf
+                    if (
+                        name is not None
+                        and mf.name == name
+                        or name is None
+                        and field_id is not None
+                        and mf.id == field_id
+                    ):
+                        return mf
         raise AttributeError("%r has no attribute %r" % (
             table_name, name if name is not None else field_id))
 
@@ -133,7 +127,7 @@ class P4InfoHelper(object):
         if match_type == p4info_pb2.MatchField.EXACT:
             logger.info('Encoding for EXACT matches')
             exact = p4runtime_match.exact
-            if isinstance(value, list) or isinstance(value, tuple):
+            if isinstance(value, (list, tuple)):
                 exact.value = encode(value[0], bit_width)
             else:
                 exact.value = encode(value, bit_width)
@@ -178,12 +172,14 @@ class P4InfoHelper(object):
             pre = action.preamble
             if pre.name == action_name:
                 for param in action.params:
-                    if name is not None:
-                        if param.name == name:
-                            return param
-                    elif action_id is not None:
-                        if param.id == action_id:
-                            return param
+                    if (
+                        name is not None
+                        and param.name == name
+                        or name is None
+                        and action_id is not None
+                        and param.id == action_id
+                    ):
+                        return param
         if action:
             raise AttributeError("action %r has no param %r, (has: %r)" % (
                 action_name, name if name is not None else action_id,
@@ -247,10 +243,7 @@ class P4InfoHelper(object):
         logger.info('Resetting counter with ID - [%s] and index - [%s]',
                     counter_id, index)
         counter_entry = p4runtime_pb2.CounterEntry()
-        if counter_id is not None:
-            counter_entry.counter_id = counter_id
-        else:
-            counter_entry.counter_id = 0
+        counter_entry.counter_id = counter_id if counter_id is not None else 0
         if index is not None:
             counter_entry.index.index = index
         counter_entry.data.byte_count = 0
@@ -269,7 +262,6 @@ class P4InfoHelper(object):
         return pre_entry
 
     def build_digest_entry(self, digest_name):
-        digest_info = {}
         logger.info("Building digest entry for %s", digest_name)
         digest_entry = p4runtime_pb2.DigestEntry()
         # using name
@@ -281,7 +273,7 @@ class P4InfoHelper(object):
         digest_entry.config.max_timeout_ns = 0
         digest_entry.config.max_list_size = 1
         digest_entry.config.ack_timeout_ns = 0
-        digest_info[digest_name] = digest_entry.digest_id
+        digest_info = {digest_name: digest_entry.digest_id}
         logger.info("Digest Entry Information %s", digest_info)
         return digest_entry, digest_info
 

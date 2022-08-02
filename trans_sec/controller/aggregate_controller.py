@@ -43,14 +43,14 @@ class AggregateController(AbstractController):
             platform, p4_build_out, topo, AGG_CTRL_KEY, log_dir, load_p4)
 
     def instantiate_switch(self, sw_info):
-        if 'arch' in sw_info and sw_info['arch'] == 'tna':
-            logger.info('Instantiating BFRT AggregateSwitch')
-            return BFRTSwitch(sw_info=sw_info)
-        else:
+        if 'arch' not in sw_info or sw_info['arch'] != 'tna':
             return P4RTSwitch(
                 sw_info=sw_info,
-                proto_dump_file='{}/{}-switch-controller.log'.format(
-                    self.log_dir, sw_info['name']))
+                proto_dump_file=f"{self.log_dir}/{sw_info['name']}-switch-controller.log",
+            )
+
+        logger.info('Instantiating BFRT AggregateSwitch')
+        return BFRTSwitch(sw_info=sw_info)
 
     def __get_agg_switch(self):
         return self.switches[0]
@@ -58,18 +58,15 @@ class AggregateController(AbstractController):
     def add_attacker(self, attack, host):
         logger.info('Attack received by the controller of type [%s] - [%s]',
                     self.switch_type, attack)
-        agg_switch = self.__get_agg_switch()
-        if agg_switch:
+        if agg_switch := self.__get_agg_switch():
             logger.info("Adding attack [%s] to Aggregate switch [%s]",
                         attack, agg_switch.device_id)
             agg_switch.add_attack(**attack)
 
     def remove_attacker(self, attack, host):
-        agg_switch = self.__get_agg_switch()
-        if agg_switch:
+        if agg_switch := self.__get_agg_switch():
             agg_switch.stop_attack(**attack)
 
     def count_dropped_packets(self):
-        agg_switch = self.__get_agg_switch()
-        if agg_switch:
+        if agg_switch := self.__get_agg_switch():
             return agg_switch.get_drop_pkt_count()

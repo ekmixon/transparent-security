@@ -58,14 +58,14 @@ class AggregateSwitch(P4RuntimeSwitch):
             'switch_id': self.int_device_id
         }
         table_entry = self.p4info_helper.build_table_entry(
-            table_name='{}.data_inspection_t'.format(self.p4_ingress),
+            table_name=f'{self.p4_ingress}.data_inspection_t',
             match_fields={
                 'hdr.ethernet.src_mac': dev_mac,
             },
-            action_name='{}.data_inspect_packet'.format(
-                self.p4_ingress),
-            action_params=action_params
+            action_name=f'{self.p4_ingress}.data_inspect_packet',
+            action_params=action_params,
         )
+
         self.write_table_entry(table_entry)
 
         logger.info(
@@ -83,13 +83,13 @@ class AggregateSwitch(P4RuntimeSwitch):
             'switch_id': self.int_device_id
         }
         table_entry = self.p4info_helper.build_table_entry(
-            table_name='{}.data_inspection_t'.format(self.p4_ingress),
+            table_name=f'{self.p4_ingress}.data_inspection_t',
             match_fields={
                 'hdr.ethernet.src_mac': dev_mac,
             },
-            action_name='{}.data_inspect_packet'.format(
-                self.p4_ingress)
+            action_name=f'{self.p4_ingress}.data_inspect_packet',
         )
+
         self.delete_table_entry(table_entry)
 
         logger.info(
@@ -138,11 +138,10 @@ class AggregateSwitch(P4RuntimeSwitch):
             'switch_id': self.int_device_id
         }
         table_entry = self.p4info_helper.build_table_entry(
-            table_name='{}.add_switch_id_t'.format(self.p4_ingress),
-            match_fields={
-                'hdr.udp_int.dst_port': UDP_INT_DST_PORT
-            },
-            action_name='{}.add_switch_id'.format(
-                self.p4_ingress),
-            action_params=action_params)
+            table_name=f'{self.p4_ingress}.add_switch_id_t',
+            match_fields={'hdr.udp_int.dst_port': UDP_INT_DST_PORT},
+            action_name=f'{self.p4_ingress}.add_switch_id',
+            action_params=action_params,
+        )
+
         self.write_table_entry(table_entry)

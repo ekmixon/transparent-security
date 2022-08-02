@@ -82,13 +82,13 @@ if __name__ == '__main__':
     logger.info('The target runs program ', p4_name)
     interface.bind_pipeline_config(p4_name)
 
-    table_name = "{}.{}".format(args.ingress, args.table)
+    table_name = f"{args.ingress}.{args.table}"
     logger.info('Table name - [%s]', table_name)
     table = bfrt_info.table_get(table_name)
     logger.info('Table class - [%s]', table.__class__)
     table.info.key_field_annotation_add(args.mac_field, 'mac')
 
-    action_name = "{}.{}".format(args.ingress, args.action)
+    action_name = f"{args.ingress}.{args.action}"
 
     table.entry_add(target,
                     [bfrt_client.KeyTuple(args.mac_field, args.mac)],

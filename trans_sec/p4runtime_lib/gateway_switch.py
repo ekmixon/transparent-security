@@ -53,7 +53,6 @@ class GatewaySwitch(P4RuntimeSwitch, ABC):
         logger.debug('Starting digest listener for - [%s]', self.sw_info)
         if 'arch' in self.sw_info and self.sw_info.get('arch') == 'tofino':
             logger.info('Tofino currently not supporting digests')
-            pass
         else:
             logger.info('Building digest entry')
             digest_entry, digest_info = self.p4info_helper.build_digest_entry(
@@ -89,14 +88,14 @@ class GatewaySwitch(P4RuntimeSwitch, ABC):
             'switch_id': self.device_id
         }
         table_entry = self.p4info_helper.build_table_entry(
-            table_name='{}.data_inspection_t'.format(self.p4_ingress),
+            table_name=f'{self.p4_ingress}.data_inspection_t',
             match_fields={
                 'hdr.ethernet.src_mac': dev_mac,
             },
-            action_name='{}.data_inspect_packet'.format(
-                self.p4_ingress),
-            action_params=action_params
+            action_name=f'{self.p4_ingress}.data_inspect_packet',
+            action_params=action_params,
         )
+
         self.write_table_entry(table_entry)
 
         logger.info(
@@ -114,13 +113,13 @@ class GatewaySwitch(P4RuntimeSwitch, ABC):
             'switch_id': self.device_id
         }
         table_entry = self.p4info_helper.build_table_entry(
-            table_name='{}.data_inspection_t'.format(self.p4_ingress),
+            table_name=f'{self.p4_ingress}.data_inspection_t',
             match_fields={
                 'hdr.ethernet.src_mac': dev_mac,
             },
-            action_name='{}.data_inspect_packet'.format(
-                self.p4_ingress),
+            action_name=f'{self.p4_ingress}.data_inspect_packet',
         )
+
         self.delete_table_entry(table_entry)
 
         logger.info(
@@ -132,8 +131,8 @@ class GatewaySwitch(P4RuntimeSwitch, ABC):
     def parse_attack(**kwargs):
         src_ip = ipaddress.ip_address(kwargs['src_ip'])
         dst_ip = ipaddress.ip_address(kwargs['dst_ip'])
-        udp_table_name = 'data_drop_udp_ipv{}_t'.format(dst_ip.version)
-        tcp_table_name = 'data_drop_tcp_ipv{}_t'.format(dst_ip.version)
+        udp_table_name = f'data_drop_udp_ipv{dst_ip.version}_t'
+        tcp_table_name = f'data_drop_tcp_ipv{dst_ip.version}_t'
         action_name = 'data_drop'
 
         logger.info('Attack src_ip - [%s], dst_ip - [%s]', src_ip, dst_ip)
@@ -146,7 +145,7 @@ class GatewaySwitch(P4RuntimeSwitch, ABC):
             logger.debug('Attack is IPv4')
             proto_key = 'ipv4'
 
-        dst_addr_key = 'hdr.{}.dstAddr'.format(proto_key)
+        dst_addr_key = f'hdr.{proto_key}.dstAddr'
 
         out = (udp_table_name, tcp_table_name, action_name,
                str(dst_ip.exploded), dst_addr_key)
@@ -224,31 +223,36 @@ class GatewaySwitch(P4RuntimeSwitch, ABC):
         # NAT Table Entries to handle UDP packets
         if udp_source_port and udp_source_port not in self.nat_udp_ports:
             table_entry = self.p4info_helper.build_table_entry(
-                table_name='{}.udp_local_to_global_t'.format(self.p4_ingress),
+                table_name=f'{self.p4_ingress}.udp_local_to_global_t',
                 match_fields={
                     'hdr.udp.src_port': udp_source_port,
-                    'hdr.ipv4.srcAddr': (source_ip, 32)
+                    'hdr.ipv4.srcAddr': (source_ip, 32),
                 },
-                action_name='{}.udp_local_to_global'.format(self.p4_ingress),
+                action_name=f'{self.p4_ingress}.udp_local_to_global',
                 action_params={
-                    'src_port': int("50" + str(self.device_id) + str(
-                        self.udp_port_count)),
-                    'ip_srcAddr': gateway_public_ip
-                })
+                    'src_port': int(
+                        f"50{str(self.device_id)}{str(self.udp_port_count)}"
+                    ),
+                    'ip_srcAddr': gateway_public_ip,
+                },
+            )
+
             self.write_table_entry(table_entry)
             table_entry = self.p4info_helper.build_table_entry(
-                table_name='{}.udp_global_to_local_t'.format(self.p4_ingress),
+                table_name=f'{self.p4_ingress}.udp_global_to_local_t',
                 match_fields={
                     'hdr.udp.dst_port': int(
-                        "50" + str(self.device_id) + str(
-                            self.udp_port_count)),
-                    'hdr.ipv4.dstAddr': (gateway_public_ip, 32)
+                        f"50{str(self.device_id)}{str(self.udp_port_count)}"
+                    ),
+                    'hdr.ipv4.dstAddr': (gateway_public_ip, 32),
                 },
-                action_name='{}.udp_global_to_local'.format(self.p4_ingress),
+                action_name=f'{self.p4_ingress}.udp_global_to_local',
                 action_params={
                     'dst_port': udp_source_port,
-                    'ip_dstAddr': source_ip
-                })
+                    'ip_dstAddr': source_ip,
+                },
+            )
+
             self.write_table_entry(table_entry)
             self.udp_port_count = self.udp_port_count + 1
             self.nat_udp_ports.add(udp_source_port)
@@ -257,31 +261,36 @@ class GatewaySwitch(P4RuntimeSwitch, ABC):
         elif tcp_source_port and tcp_source_port not in self.nat_tcp_ports:
             # NAT Table Entries to handle TCP packets
             table_entry = self.p4info_helper.build_table_entry(
-                table_name='{}.tcp_local_to_global_t'.format(self.p4_ingress),
+                table_name=f'{self.p4_ingress}.tcp_local_to_global_t',
                 match_fields={
                     'hdr.tcp.src_port': tcp_source_port,
-                    'hdr.ipv4.srcAddr': (source_ip, 32)
+                    'hdr.ipv4.srcAddr': (source_ip, 32),
                 },
-                action_name='{}.tcp_local_to_global'.format(self.p4_ingress),
+                action_name=f'{self.p4_ingress}.tcp_local_to_global',
                 action_params={
-                    'src_port': int("50" + str(self.device_id) + str(
-                        self.tcp_port_count)),
-                    'ip_srcAddr': gateway_public_ip
-                })
+                    'src_port': int(
+                        f"50{str(self.device_id)}{str(self.tcp_port_count)}"
+                    ),
+                    'ip_srcAddr': gateway_public_ip,
+                },
+            )
+
             self.write_table_entry(table_entry)
             table_entry = self.p4info_helper.build_table_entry(
-                table_name='{}.tcp_global_to_local_t'.format(self.p4_ingress),
+                table_name=f'{self.p4_ingress}.tcp_global_to_local_t',
                 match_fields={
                     'hdr.tcp.dst_port': int(
-                        "50" + str(self.device_id) + str(
-                            self.tcp_port_count)),
-                    'hdr.ipv4.dstAddr': (gateway_public_ip, 32)
+                        f"50{str(self.device_id)}{str(self.tcp_port_count)}"
+                    ),
+                    'hdr.ipv4.dstAddr': (gateway_public_ip, 32),
                 },
-                action_name='{}.tcp_global_to_local'.format(self.p4_ingress),
+                action_name=f'{self.p4_ingress}.tcp_global_to_local',
                 action_params={
                     'dst_port': tcp_source_port,
-                    'ip_dstAddr': source_ip
-                })
+                    'ip_dstAddr': source_ip,
+                },
+            )
+
             self.write_table_entry(table_entry)
             self.tcp_port_count = self.tcp_port_count + 1
             self.nat_tcp_ports.add(tcp_source_port)
@@ -325,24 +334,20 @@ class GatewaySwitch(P4RuntimeSwitch, ABC):
 
         if target_host:
             table_entry = self.p4info_helper.build_table_entry(
-                table_name='{}.mac_lookup_ipv4_t'.format(self.p4_ingress),
-                match_fields={
-                    'hdr.ipv4.dstAddr': (target_host['ip'], 32)
-                },
-                action_name='{}.mac_lookup'.format(self.p4_ingress),
-                action_params={
-                    'dst_mac': target_host['mac']
-                })
+                table_name=f'{self.p4_ingress}.mac_lookup_ipv4_t',
+                match_fields={'hdr.ipv4.dstAddr': (target_host['ip'], 32)},
+                action_name=f'{self.p4_ingress}.mac_lookup',
+                action_params={'dst_mac': target_host['mac']},
+            )
+
             self.write_table_entry(table_entry)
             table_entry = self.p4info_helper.build_table_entry(
-                table_name='{}.mac_lookup_ipv6_t'.format(self.p4_ingress),
-                match_fields={
-                    'hdr.ipv6.dstAddr': (target_host['ipv6'], 128)
-                },
-                action_name='{}.mac_lookup'.format(self.p4_ingress),
-                action_params={
-                    'dst_mac': target_host['mac']
-                })
+                table_name=f'{self.p4_ingress}.mac_lookup_ipv6_t',
+                match_fields={'hdr.ipv6.dstAddr': (target_host['ipv6'], 128)},
+                action_name=f'{self.p4_ingress}.mac_lookup',
+                action_params={'dst_mac': target_host['mac']},
+            )
+
             self.write_table_entry(table_entry)
         else:
             logger.warning('Target host not found, not setting the '

@@ -58,14 +58,13 @@ class MininetSwitch(P4Switch):
         # make sure that the provided sw_path is valid
         pathCheck(sw_path)
 
-        if json_path is not None:
-            # make sure that the provided JSON file exists
-            if not os.path.isfile(json_path):
-                raise Exception('Invalid JSON file - [%s]', json_path)
-            self.json_path = json_path
-        else:
+        if json_path is None:
             self.json_path = None
 
+        elif not os.path.isfile(json_path):
+            raise Exception('Invalid JSON file - [%s]', json_path)
+        else:
+            self.json_path = json_path
         if grpc_port is not None:
             self.grpc_port = grpc_port
         else:
@@ -84,7 +83,7 @@ class MininetSwitch(P4Switch):
                 'process\n' % (self.name, self.grpc_port))
 
         self.verbose = True
-        logfile = "/tmp/p4s.{}.log".format(self.name)
+        logfile = f"/tmp/p4s.{self.name}.log"
         self.output = open(logfile, 'w')
         self.pcap_dump = pcap_dump
         self.enable_debugger = enable_debugger
@@ -95,7 +94,7 @@ class MininetSwitch(P4Switch):
         else:
             self.device_id = P4Switch.device_id
             P4Switch.device_id += 1
-        self.nanomsg = "ipc:///tmp/bm-{}-log.ipc".format(self.device_id)
+        self.nanomsg = f"ipc:///tmp/bm-{self.device_id}-log.ipc"
 
     def check_switch_started(self, pid):
         for _ in range(SWITCH_START_TIMEOUT * 2):
@@ -106,13 +105,13 @@ class MininetSwitch(P4Switch):
             sleep(0.5)
 
     def start(self, controllers):
-        logger.info("Starting P4 switch {}.".format(self.name))
+        logger.info(f"Starting P4 switch {self.name}.")
         args = [self.sw_path]
         for port, intf in self.intfs.items():
             if not intf.IP():
-                args.extend(['-i', str(port) + "@" + intf.name])
+                args.extend(['-i', f"{str(port)}@{intf.name}"])
         if self.pcap_dump:
-            args.append("--pcap " + str(self.pcap_dump))
+            args.append(f"--pcap {str(self.pcap_dump)}")
         if self.nanomsg:
             args.extend(['--nanolog', self.nanomsg])
         args.extend(['--device-id', str(self.device_id)])
@@ -126,18 +125,17 @@ class MininetSwitch(P4Switch):
         if self.log_console:
             args.append("--log-console")
         if self.thrift_port:
-            args.append('--thrift-port ' + str(self.thrift_port))
+            args.append(f'--thrift-port {str(self.thrift_port)}')
         if self.grpc_port:
-            args.append("-- --grpc-server-addr 0.0.0.0:" + str(self.grpc_port))
+            args.append(f"-- --grpc-server-addr 0.0.0.0:{str(self.grpc_port)}")
         cmd = ' '.join(args)
         logger.info('Command - [%s]', cmd)
 
-        logfile = "/tmp/p4s.{}.log".format(self.name)
+        logfile = f"/tmp/p4s.{self.name}.log"
         with tempfile.NamedTemporaryFile() as f:
-            self.cmd(cmd + ' >' + logfile + ' 2>&1 & echo $! >> ' + f.name)
+            self.cmd(f'{cmd} >{logfile} 2>&1 & echo $! >> {f.name}')
             pid = int(f.read())
-        logger.debug("P4 switch {} PID is {}.".format(self.name, pid))
+        logger.debug(f"P4 switch {self.name} PID is {pid}.")
         if not self.check_switch_started(pid):
-            raise Exception("P4 switch {} did not start correctly.\n".format(
-                self.name))
+            raise Exception(f"P4 switch {self.name} did not start correctly.\n")
         logger.info("P4 switch %s has been started.", self.name)

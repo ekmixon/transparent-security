@@ -41,12 +41,14 @@ class HttpSession:
         logger.info('GET resource [%s] with key [%s]', resource, key)
         if not self.is_authorized():
             self.authorize()
-        headers = {'Authorization': 'Bearer ' + self.token}
+        headers = {'Authorization': f'Bearer {self.token}'}
         actual_resource = resource
         if key is not None:
-            actual_resource = actual_resource + '/' + key
-        r = requests.get(self.url + '/' + actual_resource,
-                         headers=headers, verify=False)
+            actual_resource = f'{actual_resource}/{key}'
+        r = requests.get(
+            f'{self.url}/{actual_resource}', headers=headers, verify=False
+        )
+
         if r.status_code == 200:
             logger.info('GET return value - [%s]', r.json())
             return r.json()
@@ -60,19 +62,20 @@ class HttpSession:
         logger.info('POST resource [%s] with body [%s]', resource, body)
         if not self.is_authorized():
             self.authorize()
-        headers = {'Authorization': 'Bearer ' + self.token}
+        headers = {'Authorization': f'Bearer {self.token}'}
         logger.debug('Post request received from %s/%s with body value[%s]',
                      self.url, resource, body)
         try:
             response = requests.post(
-                self.url + '/' + resource,
-                headers=headers, json=body, verify=False)
+                f'{self.url}/{resource}', headers=headers, json=body, verify=False
+            )
+
         except Exception as e:
             logger.error('Unexpected error - %s', e)
             return
 
         logger.debug('POST response - [%s]', response)
-        if response.status_code == 201 or response.status_code == 200:
+        if response.status_code in [201, 200]:
             logger.info('POST return value - [%s]', response.json())
             return response.json()
         else:
@@ -91,15 +94,17 @@ class HttpSession:
         logger.info('DELETE resource [%s] with key [%s]', resource, body)
         if not self.is_authorized():
             self.authorize()
-        headers = {'Authorization': 'Bearer ' + self.token}
-        r = requests.delete(self.url + '/' + resource,
-                            headers=headers, json=body, verify=False)
+        headers = {'Authorization': f'Bearer {self.token}'}
+        r = requests.delete(
+            f'{self.url}/{resource}', headers=headers, json=body, verify=False
+        )
+
         if r.status_code == 200:
             logger.info('DELETE return value - [%s]', r.json())
             return r.json()
         elif r.status_code == 404:
             logger.info('Deleting a non-existent object, ignoring')
-            return dict()
+            return {}
         else:
             logger.error('Error on Delete with code %s and payload [%s]',
                          r.status_code, r.json)
@@ -109,10 +114,15 @@ class HttpSession:
         logger.info('PUT resource [%s] with key [%s]', resource, key)
         if not self.is_authorized():
             self.authorize()
-        headers = {'Authorization': 'Bearer ' + self.token}
-        actual_resource = resource + '/' + key
-        r = requests.put(self.url + '/' + actual_resource,
-                         headers=headers, json=body, verify=False)
+        headers = {'Authorization': f'Bearer {self.token}'}
+        actual_resource = f'{resource}/{key}'
+        r = requests.put(
+            f'{self.url}/{actual_resource}',
+            headers=headers,
+            json=body,
+            verify=False,
+        )
+
         if r.status_code == 200:
             logger.info('PUT return value - [%s]', r.json())
             return r.json()

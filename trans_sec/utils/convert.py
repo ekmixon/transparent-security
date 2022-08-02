@@ -59,14 +59,10 @@ def decode_mac(encoded_mac_addr):
     out = None
     mac_str = str(encoded_mac_addr)
     logger.debug('mac_str - [%s]', mac_str)
-    tokens = str(mac_str).split('\\x')
+    tokens = mac_str.split('\\x')
     tokens.pop(0)
     for token in tokens:
-        if not out:
-            out = token
-        else:
-            out = out + ':' + token
-
+        out = f'{out}:{token}' if out else token
     if out:
         out = out.replace('/', '')
         out = out.replace('\'', '')
@@ -133,7 +129,7 @@ def encode(x, bitwidth):
     logger.info('Encoding - [%s] with - [%s]', x, bitwidth)
     bitwidth_bytes = bitwidth_to_bytes(bitwidth)
     is_ipv6 = False
-    if (type(x) == list or type(x) == tuple) and len(x) == 1:
+    if type(x) in [list, tuple] and len(x) == 1:
         x = list(x)[0]
     if isinstance(x, str):
         logger.info('Converting string value - [%s]', x)
@@ -155,12 +151,11 @@ def encode(x, bitwidth):
     elif type(x) == int:
         logger.debug('Encoding [%s] as a int value', x)
         encoded_bytes = encode_num(x, bitwidth)
+    elif x:
+        raise SyntaxError(
+            "Encoding objects of %r is not supported" % type(x))
     else:
-        if x:
-            raise SyntaxError(
-                "Encoding objects of %r is not supported" % type(x))
-        else:
-            raise SyntaxError('Value to encode is None')
+        raise SyntaxError('Value to encode is None')
 
     logger.debug('Length of encoded bytes - [%s] - bitwidth_bytes - [%s]',
                  len(encoded_bytes), bitwidth_bytes)

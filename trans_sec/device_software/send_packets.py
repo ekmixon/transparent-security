@@ -104,8 +104,7 @@ def get_args():
         '-pr', '--protocol', dest='protocol', required=False, type=str,
         default='UDP', choices=['TCP', 'UDP'],
         help='The packet protocol to generate. [TCP|UDP - default]')
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
 
 
 def device_send(args):
@@ -126,7 +125,7 @@ def device_send(args):
         sendp(pkt, iface=interface, verbose=2, inter=args.interval, loop=1)
     else:
         logger.info('Starting iter loop for iterations %s', args.iterations)
-        for i in range(0, args.iterations):
+        for i in range(args.iterations):
             logger.info('Iteration %s', i)
             logger.info('Sending %s packets to %s every %s',
                         args.count, interface, args.interval)
@@ -148,12 +147,10 @@ def __create_packet(args, interface):
         src_mac = get_if_hwaddr(interface)
     logger.info('Device mac - [%s]', src_mac)
 
-    ip_ver = 4
     ip_addr = ipaddress.ip_address(args.destination)
     logger.info('Destination IP addr [%s] ([%s]) type - [%s]',
                 args.destination, args.destination, ip_addr.__class__)
-    if isinstance(ip_addr, ipaddress.IPv6Address):
-        ip_ver = 6
+    ip_ver = 6 if isinstance(ip_addr, ipaddress.IPv6Address) else 4
     logger.info('IP version is - [%s]', ip_ver)
 
     if args.int_hdr_file:
@@ -182,13 +179,12 @@ def __gen_std_pkt(args, ip_ver, src_mac):
         elif args.protocol == 'UDP':
             ip_hdr = IP(dst=args.destination, src=args.source_addr,
                         proto=trans_sec.consts.UDP_PROTO)
-    else:
-        if args.protocol == 'TCP':
-            ip_hdr = IPv6(dst=args.destination, src=args.source_addr,
-                          nh=trans_sec.consts.TCP_PROTO)
-        elif args.protocol == 'UDP':
-            ip_hdr = IPv6(dst=args.destination, src=args.source_addr,
-                          nh=trans_sec.consts.UDP_PROTO)
+    elif args.protocol == 'TCP':
+        ip_hdr = IPv6(dst=args.destination, src=args.source_addr,
+                      nh=trans_sec.consts.TCP_PROTO)
+    elif args.protocol == 'UDP':
+        ip_hdr = IPv6(dst=args.destination, src=args.source_addr,
+                      nh=trans_sec.consts.UDP_PROTO)
 
     dst_mac = __get_dst_mac(args)
 
@@ -241,13 +237,13 @@ def __gen_int_pkt(args, ip_ver, src_mac):
     logger.info('Int data to add to packet - [%s]', int_data)
     udp_int_len = None
     # TODO - Find a better way to calculate PAYLOAD_LEN using args.msg
-    if args.protocol == 'UDP':
-        udp_int_len = trans_sec.consts.UDP_INT_HDR_LEN + (shim_len * 4) \
-                      + trans_sec.consts.UDP_HDR_LEN \
-                      + trans_sec.consts.PAYLOAD_LEN
-    elif args.protocol == 'TCP':
+    if args.protocol == 'TCP':
         udp_int_len = trans_sec.consts.UDP_INT_HDR_LEN + (shim_len * 4) \
                       + trans_sec.consts.TCP_HDR_LEN \
+                      + trans_sec.consts.PAYLOAD_LEN
+    elif args.protocol == 'UDP':
+        udp_int_len = trans_sec.consts.UDP_INT_HDR_LEN + (shim_len * 4) \
+                      + trans_sec.consts.UDP_HDR_LEN \
                       + trans_sec.consts.PAYLOAD_LEN
     ipv4_len = trans_sec.consts.IPV4_HDR_LEN + udp_int_len
     ipv6_len = trans_sec.consts.IPV6_HDR_LEN + udp_int_len
@@ -276,8 +272,7 @@ def __gen_int_pkt(args, ip_ver, src_mac):
 
     if int_hops > 0:
         pkt = pkt / IntHeader()
-        ctr = 0
-        for int_meta in int_data['meta']:
+        for ctr, int_meta in enumerate(int_data['meta']):
             logger.info('Adding int_meta - [%s] to INT data', int_meta)
 
             if ctr == 0 and not int_meta.get('orig_mac'):
@@ -293,8 +288,6 @@ def __gen_int_pkt(args, ip_ver, src_mac):
                 pkt = pkt / SourceIntMeta(
                     switch_id=int_meta['switch_id'],
                     orig_mac=orig_mac)
-            ctr += 1
-
     return pkt
 
 
@@ -303,7 +296,7 @@ def __read_yaml_file(config_file_path):
     Reads a yaml file and returns a dict representation of it
     :return: a dict of the yaml file
     """
-    logger.debug('Attempting to load configuration file - ' + config_file_path)
+    logger.debug(f'Attempting to load configuration file - {config_file_path}')
     config_file = None
     try:
         with open(config_file_path, 'r') as config_file:

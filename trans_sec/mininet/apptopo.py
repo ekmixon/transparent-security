@@ -23,11 +23,11 @@ class AppTopo(Topo):
         sw_names = sorted(list(set(filter(lambda n: n[0] == 's', nodes))))
         sw_ports = dict([(sw, []) for sw in sw_names])
 
-        self.host_links = dict()
+        self.host_links = {}
         self.sw_links = dict([(sw, {}) for sw in sw_names])
 
         for sw_name in sw_names:
-            self.addSwitch(sw_name, log_file="%s/%s.log" % (log_dir, sw_name))
+            self.addSwitch(sw_name, log_file=f"{log_dir}/{sw_name}.log")
 
         for host_name in host_names:
             host_num = int(host_name[1:])
@@ -38,13 +38,13 @@ class AppTopo(Topo):
             host_links = filter(
                 lambda l: l[0] == host_name or l[1] == host_name, links)
 
-            sw_idx = 0
-            for link in host_links:
+            for sw_idx, link in enumerate(host_links):
                 sw = link[0] if link[0] != host_name else link[1]
                 sw_num = int(sw[1:])
-                assert sw[0] ==\
-                    's', "Hosts should be connected to switches, "\
-                         "not {}".format(str(sw))
+                assert (
+                    sw[0] == 's'
+                ), f"Hosts should be connected to switches, not {str(sw)}"
+
                 host_ip = "10.0.%d.%d" % (sw_num, host_num)
                 host_mac = '00:00:00:00:%02x:%02x' % (sw_num, host_num)
                 delay_key = ''.join([host_name, sw])
@@ -64,8 +64,6 @@ class AppTopo(Topo):
                 self.addLink(host_name, sw, delay=delay, bw=bw,
                              addr1=host_mac,
                              addr2=self.host_links[host_name][sw]['sw_mac'])
-                sw_idx += 1
-
         for link in links:  # only check switch-switch links
             sw1, sw2 = link
             if sw1[0] != 's' or sw2[0] != 's':

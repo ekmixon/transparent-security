@@ -74,15 +74,13 @@ class BFRuntimeSwitch(SwitchConnection, ABC):
             inv_dict = yaml.safe_load(inv_file)
 
         trans_sec_dir = inv_dict['all']['vars']['orch_trans_sec_dir']
-        playbook = "{}/playbooks/tofino/conf_switch_ports.yml".format(
-            trans_sec_dir)
+        playbook = f"{trans_sec_dir}/playbooks/tofino/conf_switch_ports.yml"
         extra_vars = {
             "host_val": self.name,
             "ports": self.sw_info['tunnels']
         }
-        cmd = 'su - {} -c "/usr/local/bin/ansible-playbook -i {} {} '\
-              '--extra-vars=\\"{}\\""'.format(
-                controller_user, ansible_inventory, playbook, str(extra_vars))
+        cmd = f'su - {controller_user} -c "/usr/local/bin/ansible-playbook -i {ansible_inventory} {playbook} --extra-vars=\\"{extra_vars}\\""'
+
         ret_val = os.system(cmd)
         if ret_val != 0:
             logger.error('os.system command [%s] failed with - [%s]',
@@ -105,8 +103,6 @@ class BFRuntimeSwitch(SwitchConnection, ABC):
             pre_table.entry_del(self.target, pre_key)
         except Exception as e:
             logger.debug('Ignore me - [%s]', e)
-            pass
-
         try:
             pre_table.entry_add(
                 self.target, pre_key,
@@ -117,9 +113,7 @@ class BFRuntimeSwitch(SwitchConnection, ABC):
                 ])]
             )
         except Exception as e:
-            if 'ALREADY_EXISTS' in str(e):
-                pass
-            else:
+            if 'ALREADY_EXISTS' not in str(e):
                 logger.error('Unexpected error inserting into table %s - [%s]',
                              '$pre.node', e)
                 raise e
@@ -131,8 +125,6 @@ class BFRuntimeSwitch(SwitchConnection, ABC):
             mg_id_table.entry_del(self.target, mg_id_key)
         except Exception as e:
             logger.debug('Ignore me - [%s]', e)
-            pass
-
         try:
             mg_id_table.entry_add(
                 self.target, mg_id_key,
@@ -144,9 +136,7 @@ class BFRuntimeSwitch(SwitchConnection, ABC):
                 ])]
             )
         except Exception as e:
-            if 'ALREADY_EXISTS' in str(e):
-                pass
-            else:
+            if 'ALREADY_EXISTS' not in str(e):
                 logger.error('Unexpected error inserting into table %s - [%s]',
                              '$pre.mgid', e)
                 raise e
@@ -159,17 +149,17 @@ class BFRuntimeSwitch(SwitchConnection, ABC):
                                                      node_id)])]
         entries = mg_id_table.entry_get(self.target, match_keys)
 
-        out_ports = list()
-        for data, key in entries:
-            if '$DEV_PORT' in data:
-                out_ports.append(data.to_dict()['$DEV_PORT'])
+        out_ports = [
+            data.to_dict()['$DEV_PORT']
+            for data, key in entries
+            if '$DEV_PORT' in data
+        ]
 
         logger.info('Multicast ports returned - [%s]', out_ports)
         return out_ports
 
     def __setup_default_port(self):
-        dflt_port = self.__find_dflt_port()
-        if dflt_port:
+        if dflt_port := self.__find_dflt_port():
             self.update_default_port(dflt_port)
 
     def __find_node_ports(self):
@@ -193,7 +183,7 @@ class BFRuntimeSwitch(SwitchConnection, ABC):
         section of self.sw_info dict that are not == 1
         :return:
         """
-        out = list()
+        out = []
         for tunnel in self.sw_info['tunnels']:
             tunnel_port = int(tunnel['switch_port'])
             if tunnel_port != 1 and tunnel.get('type', None) == port_type:
@@ -212,8 +202,7 @@ class BFRuntimeSwitch(SwitchConnection, ABC):
         return self.bfrt_info.table_get(name)
 
     def get_table_id(self, name):
-        table = self.get_table(name)
-        if table:
+        if table := self.get_table(name):
             logger.debug('table id - [%s]', table.info.id)
             return table.info.id
 
@@ -227,8 +216,7 @@ class BFRuntimeSwitch(SwitchConnection, ABC):
         @param data_fields : List of bfrt_grpc.client.DataTuple objects.
         """
 
-        table = self.get_table(table_name)
-        if table:
+        if table := self.get_table(table_name):
             key = table.make_key(key_fields)
             data = table.make_data(data_fields, action_name)
             logger.info('Inserting keys - [%s], data - [%s] into table [%s]',
@@ -241,8 +229,7 @@ class BFRuntimeSwitch(SwitchConnection, ABC):
         @param table_name : Table name.
         @param key_fields : List of bfrt_grpc.client.KeyTuple objects.
         """
-        table = self.get_table(table_name)
-        if table:
+        if table := self.get_table(table_name):
             key = table.make_key(key_fields)
             table.entry_del(self.target, [key])
 

@@ -55,7 +55,7 @@ def read_yaml_file(config_file_path):
     Reads a yaml file and returns a dict representation of it
     :return: a dict of the yaml file
     """
-    logger.debug('Attempting to load configuration file - ' + config_file_path)
+    logger.debug(f'Attempting to load configuration file - {config_file_path}')
     config_file = None
     try:
         with open(config_file_path, 'r') as config_file:
@@ -75,7 +75,7 @@ if __name__ == '__main__':
     """
     args = get_args()
     if args.log_dir and args.log_file:
-        log_file = '{}/{}'.format(args.log_dir, args.log_file)
+        log_file = f'{args.log_dir}/{args.log_file}'
         logging.basicConfig(level=logging.DEBUG, filename=log_file)
     else:
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -105,12 +105,12 @@ if __name__ == '__main__':
                             sw_info['type'])
         switch.master_arbitration_update()
 
-        match_fields = dict()
+        match_fields = {}
         if 'match_fields' in entry_config:
             logger.info('Match fields obj - [%s]',
                         entry_config['match_fields'])
             for key, value in entry_config['match_fields'].items():
-                if isinstance(value, list) or isinstance(value, tuple):
+                if isinstance(value, (list, tuple)):
                     logger.debug('Match fields list - [%s]', value)
                     match_fields[key] = (value[0], value[1])
                 else:
@@ -119,7 +119,7 @@ if __name__ == '__main__':
 
         if args.insert == 'True':
             entries = switch.get_match_values(entry_config['table_name'])
-            logger.info('Existing table entries - {}'.format(entries))
+            logger.info(f'Existing table entries - {entries}')
             logger.info(
                 'Entry configuration for table entry - [%s] and match fields '
                 '- [%s]', entry_config, match_fields)
